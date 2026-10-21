@@ -1,0 +1,6 @@
+.git
+**/.terraform
+**/*.tfstate
+**/node_modules
+**/*_test.go
+.env
