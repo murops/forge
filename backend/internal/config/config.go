@@ -18,6 +18,18 @@ type Config struct {
 
 	GitHubOrg         string
 	WorkerConcurrency int
+
+	Provisioner               string
+	TerraformBin              string
+	TerraformDir              string
+	GitHubAppID               string
+	GitHubAppInstallationID   string
+	GitHubAppPrivateKeyFile   string
+	GitHubPrivateRulesets     bool
+	AWSEnabled                bool
+	AWSRegion                 string
+	AWSGitHubOIDCProviderARN  string
+	LambdaPlaceholderImageURI string
 }
 
 func Load() (Config, error) {
@@ -28,6 +40,21 @@ func Load() (Config, error) {
 		OIDCDiscoveryURL: os.Getenv("OIDC_DISCOVERY_URL"),
 		OIDCAudience:     env("OIDC_AUDIENCE", "forge-api"),
 		GitHubOrg:        env("GITHUB_ORG", "murops-forge"),
+
+		Provisioner:               env("PROVISIONER", "dryrun"),
+		TerraformBin:              env("TERRAFORM_BIN", "terraform"),
+		TerraformDir:              env("TERRAFORM_DIR", "../infra"),
+		GitHubAppID:               os.Getenv("GITHUB_APP_ID"),
+		GitHubAppInstallationID:   os.Getenv("GITHUB_APP_INSTALLATION_ID"),
+		GitHubAppPrivateKeyFile:   os.Getenv("GITHUB_APP_PRIVATE_KEY_FILE"),
+		GitHubPrivateRulesets:     os.Getenv("GITHUB_PRIVATE_RULESETS") == "true",
+		AWSEnabled:                os.Getenv("AWS_ENABLED") == "true",
+		AWSRegion:                 env("AWS_REGION", "us-east-1"),
+		AWSGitHubOIDCProviderARN:  os.Getenv("AWS_GITHUB_OIDC_PROVIDER_ARN"),
+		LambdaPlaceholderImageURI: os.Getenv("LAMBDA_PLACEHOLDER_IMAGE_URI"),
+	}
+	if c.Provisioner != "dryrun" && c.Provisioner != "terraform" {
+		return c, fmt.Errorf("PROVISIONER must be dryrun or terraform")
 	}
 	if c.DatabaseURL == "" {
 		return c, fmt.Errorf("DATABASE_URL is required")

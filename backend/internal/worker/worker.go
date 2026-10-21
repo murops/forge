@@ -14,11 +14,12 @@ import (
 )
 
 type Provisioner interface {
-	Provision(ctx context.Context, req requests.Request) (string, error)
+	Provision(ctx context.Context, req requests.Request, tmpl requests.Template) (string, error)
 }
 
 type Store interface {
 	Get(ctx context.Context, id uuid.UUID) (requests.Request, error)
+	Template(ctx context.Context, slug string) (requests.Template, error)
 	MarkRunning(ctx context.Context, id uuid.UUID) error
 	MarkSucceeded(ctx context.Context, id uuid.UUID, repoURL string) error
 	MarkFailed(ctx context.Context, id uuid.UUID, msg string) error
@@ -55,17 +56,22 @@ func (w *ProvisionWorker) Work(ctx context.Context, job *river.Job[requests.Prov
 		return nil
 	}
 
+	tmpl, err := w.store.Template(ctx, req.Template)
+	if err != nil {
+		return err
+	}
+
 	if err := w.store.MarkRunning(ctx, id); err != nil {
 		return err
 	}
 	log.Info("provisioning repository", "name", req.Name, "template", req.Template)
 
-	url, err := w.provisioner.Provision(ctx, req)
+	url, err := w.provisioner.Provision(ctx, req, tmpl)
 	if err != nil {
 		log.Error("provisioning failed", "error", err)
 		if job.Attempt >= job.MaxAttempts {
 			// use a fresh context, the job's may already be cancelled
-			if ferr := w.store.MarkFailed(context.WithoutCancel(ctx), id, err.Error()); ferr != nil {
+			if ferr := w.store.MarkFailed(context.WithoutCancel(ctx), id, tail(err.Error(), 2000)); ferr != nil {
 				log.Error("could not mark request as failed", "error", ferr)
 			}
 		}

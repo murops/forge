@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 	"time"
@@ -118,7 +119,11 @@ func runWorker(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	}
 	defer pool.Close()
 
-	provisioner := worker.DryRun{Org: cfg.GitHubOrg, Delay: 3 * time.Second, Log: log}
+	provisioner, err := newProvisioner(cfg, log)
+	if err != nil {
+		return err
+	}
+	log.Info("using provisioner", "type", cfg.Provisioner)
 
 	workers := river.NewWorkers()
 	river.AddWorker(workers, worker.NewProvisionWorker(requests.NewRepository(pool), provisioner, log))
@@ -141,4 +146,34 @@ func runWorker(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	stopCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	return client.Stop(stopCtx)
+}
+
+func newProvisioner(cfg config.Config, log *slog.Logger) (worker.Provisioner, error) {
+	if cfg.Provisioner == "dryrun" {
+		return worker.DryRun{Org: cfg.GitHubOrg, Delay: 3 * time.Second, Log: log}, nil
+	}
+
+	app, err := worker.LoadGitHubApp(cfg.GitHubAppID, cfg.GitHubAppInstallationID, cfg.GitHubAppPrivateKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	bin, err := exec.LookPath(cfg.TerraformBin)
+	if err != nil {
+		return nil, fmt.Errorf("terraform binary: %w", err)
+	}
+	return &worker.Terraform{
+		ExecPath:        bin,
+		InfraDir:        cfg.TerraformDir,
+		StateConnString: cfg.DatabaseURL,
+		Owner:           cfg.GitHubOrg,
+		App:             app,
+		PrivateRulesets: cfg.GitHubPrivateRulesets,
+		AWS: worker.AWSOptions{
+			Enabled:             cfg.AWSEnabled,
+			Region:              cfg.AWSRegion,
+			OIDCProviderARN:     cfg.AWSGitHubOIDCProviderARN,
+			PlaceholderImageURI: cfg.LambdaPlaceholderImageURI,
+		},
+		Log: log,
+	}, nil
 }

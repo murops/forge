@@ -16,7 +16,7 @@ type DryRun struct {
 	Log   *slog.Logger
 }
 
-func (d DryRun) Provision(ctx context.Context, req requests.Request) (string, error) {
+func (d DryRun) Provision(ctx context.Context, req requests.Request, _ requests.Template) (string, error) {
 	d.Log.Info("dry run: would create repository",
 		"org", d.Org, "name", req.Name, "template", req.Template,
 		"private", req.Private, "with_lambda", req.WithLambda)

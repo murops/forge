@@ -26,6 +26,10 @@ func (s *fakeStore) Get(context.Context, uuid.UUID) (requests.Request, error) {
 	return s.req, s.getErr
 }
 
+func (s *fakeStore) Template(_ context.Context, slug string) (requests.Template, error) {
+	return requests.Template{Slug: slug, SourceRepo: "org/template"}, nil
+}
+
 func (s *fakeStore) MarkRunning(context.Context, uuid.UUID) error {
 	s.status = requests.StatusRunning
 	return nil
@@ -47,7 +51,7 @@ type fakeProvisioner struct {
 	calls int
 }
 
-func (p *fakeProvisioner) Provision(context.Context, requests.Request) (string, error) {
+func (p *fakeProvisioner) Provision(context.Context, requests.Request, requests.Template) (string, error) {
 	p.calls++
 	return p.url, p.err
 }
