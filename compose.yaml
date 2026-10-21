@@ -1,7 +1,11 @@
 name: forge
 
 x-backend: &backend
-  build: ./backend
+  image: forge-api:local
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+    target: api
   environment: &backend-env
     DATABASE_URL: postgres://forge:forge@postgres:5432/forge?sslmode=disable
     LOG_LEVEL: info
@@ -70,11 +74,24 @@ services:
 
   worker:
     <<: *backend
+    image: forge-worker:local
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: worker
     command: ["worker"]
     environment:
       <<: *backend-env
-      GITHUB_ORG: murops-forge
       WORKER_CONCURRENCY: "5"
+      PROVISIONER: ${PROVISIONER:-dryrun}
+      GITHUB_ORG: ${GITHUB_ORG:-murops-forge}
+      GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+      GITHUB_APP_INSTALLATION_ID: ${GITHUB_APP_INSTALLATION_ID:-}
+      GITHUB_APP_PRIVATE_KEY_FILE: /run/secrets/github_app_key
+    # same uid as the key owner on the host, so the key can stay chmod 600
+    user: ${FORGE_UID:-65532}
+    secrets:
+      - github_app_key
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -92,3 +109,7 @@ services:
 
 volumes:
   pgdata:
+
+secrets:
+  github_app_key:
+    file: ${GITHUB_APP_PRIVATE_KEY_PATH:-/dev/null}
