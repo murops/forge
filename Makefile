@@ -1,4 +1,4 @@
-.PHONY: up down logs test lint generate token
+.PHONY: up down logs test tf-test lint generate token
 
 SQLC_VERSION := 1.31.1
 
@@ -14,8 +14,15 @@ logs:
 test:
 	cd backend && go test -race ./...
 
+tf-test:
+	@for dir in infra/modules/* infra/stacks/*; do \
+		echo "== $$dir"; \
+		terraform -chdir=$$dir init -backend=false -input=false >/dev/null && terraform -chdir=$$dir test || exit 1; \
+	done
+
 lint:
 	cd backend && go vet ./...
+	terraform fmt -check -recursive infra
 
 generate:
 	docker run --rm -u $$(id -u):$$(id -g) -v $(CURDIR)/backend:/src -w /src sqlc/sqlc:$(SQLC_VERSION) generate
