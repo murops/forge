@@ -39,7 +39,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput, u User) (Request, 
 	if err := in.Validate(); err != nil {
 		return Request{}, err
 	}
-	private := true
+	private := false
 	if in.Private != nil {
 		private = *in.Private
 	}
