@@ -4,3 +4,5 @@
 .terraform/
 node_modules/
 .next/
+infra/modules/**/.terraform.lock.hcl
+*.pem
