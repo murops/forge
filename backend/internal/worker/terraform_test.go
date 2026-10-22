@@ -36,6 +36,9 @@ func TestRepositoryVars(t *testing.T) {
 	if got["owner"] != "murops-forge" || got["repository"] != "template-lambda-python" {
 		t.Errorf("template = %v", got)
 	}
+	if checks := v["required_checks"].([]string); checks == nil || len(checks) != 0 {
+		t.Errorf("required_checks must be an empty list, not null: %#v", checks)
+	}
 	if v["actions_variables"].(map[string]string)["AWS_REGION"] != "sa-east-1" {
 		t.Errorf("actions variables not passed: %v", v["actions_variables"])
 	}

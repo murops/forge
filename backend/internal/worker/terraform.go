@@ -134,6 +134,10 @@ func (t *Terraform) repositoryVars(req requests.Request, tmpl requests.Template,
 	if req.Private {
 		visibility = "private"
 	}
+	checks := tmpl.RequiredChecks
+	if checks == nil {
+		checks = []string{}
+	}
 	return map[string]any{
 		"name":                       req.Name,
 		"description":                req.Description,
@@ -145,6 +149,7 @@ func (t *Terraform) repositoryVars(req requests.Request, tmpl requests.Template,
 		"template":                   map[string]string{"owner": owner, "repository": repo},
 		"template_topic":             tmpl.Slug,
 		"private_rulesets_supported": t.PrivateRulesets,
+		"required_checks":            checks,
 		"actions_variables":          actionsVars,
 	}, nil
 }
