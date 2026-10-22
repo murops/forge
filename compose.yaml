@@ -88,6 +88,8 @@ services:
       GITHUB_APP_ID: ${GITHUB_APP_ID:-}
       GITHUB_APP_INSTALLATION_ID: ${GITHUB_APP_INSTALLATION_ID:-}
       GITHUB_APP_PRIVATE_KEY_FILE: /run/secrets/github_app_key
+      SONAR_TOKEN: ${SONAR_TOKEN:-}
+      SONAR_ORGANIZATION: ${SONAR_ORGANIZATION:-}
     # same uid as the key owner on the host, so the key can stay chmod 600
     user: ${FORGE_UID:-65532}
     secrets:
