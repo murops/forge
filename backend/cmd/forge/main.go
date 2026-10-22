@@ -80,7 +80,7 @@ func runAPI(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 		return err
 	}
 
-	verifier, err := httpapi.NewOIDCVerifier(ctx, cfg.OIDCIssuer, cfg.OIDCDiscoveryURL, cfg.OIDCAudience)
+	verifier, err := httpapi.NewOIDCVerifier(ctx, cfg.OIDCIssuer, cfg.OIDCAudience)
 	if err != nil {
 		return fmt.Errorf("oidc: %w", err)
 	}

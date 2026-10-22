@@ -12,9 +12,8 @@ type Config struct {
 	HTTPAddr    string
 	LogLevel    slog.Level
 
-	OIDCIssuer       string
-	OIDCDiscoveryURL string
-	OIDCAudience     string
+	OIDCIssuer   string
+	OIDCAudience string
 
 	GitHubOrg         string
 	WorkerConcurrency int
@@ -36,12 +35,11 @@ type Config struct {
 
 func Load() (Config, error) {
 	c := Config{
-		DatabaseURL:      os.Getenv("DATABASE_URL"),
-		HTTPAddr:         env("HTTP_ADDR", ":8000"),
-		OIDCIssuer:       os.Getenv("OIDC_ISSUER"),
-		OIDCDiscoveryURL: os.Getenv("OIDC_DISCOVERY_URL"),
-		OIDCAudience:     env("OIDC_AUDIENCE", "forge-api"),
-		GitHubOrg:        env("GITHUB_ORG", "murops-forge"),
+		DatabaseURL:  os.Getenv("DATABASE_URL"),
+		HTTPAddr:     env("HTTP_ADDR", ":8000"),
+		OIDCIssuer:   os.Getenv("OIDC_ISSUER"),
+		OIDCAudience: env("OIDC_AUDIENCE", "forge-api"),
+		GitHubOrg:    env("GITHUB_ORG", "murops-forge"),
 
 		Provisioner:               env("PROVISIONER", "dryrun"),
 		TerraformBin:              env("TERRAFORM_BIN", "terraform"),

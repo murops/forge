@@ -20,18 +20,11 @@ type OIDCVerifier struct {
 	verifier *oidc.IDTokenVerifier
 }
 
-// discoveryURL is set when the IdP is reached through an internal hostname
-// (keycloak:8080 in compose) but tokens are issued for localhost:8080.
-func NewOIDCVerifier(ctx context.Context, issuer, discoveryURL, audience string) (*OIDCVerifier, error) {
+func NewOIDCVerifier(ctx context.Context, issuer, audience string) (*OIDCVerifier, error) {
 	if issuer == "" {
 		return nil, errors.New("OIDC_ISSUER is required")
 	}
-	if discoveryURL == "" {
-		discoveryURL = issuer
-	} else {
-		ctx = oidc.InsecureIssuerURLContext(ctx, issuer)
-	}
-	provider, err := oidc.NewProvider(ctx, discoveryURL)
+	provider, err := oidc.NewProvider(ctx, issuer)
 	if err != nil {
 		return nil, err
 	}

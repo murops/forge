@@ -29,6 +29,6 @@ generate:
 
 # access token for the local "dev" user, e.g. TOKEN=$(make -s token)
 token:
-	@curl -s http://localhost:8080/realms/forge/protocol/openid-connect/token \
+	@curl -s http://keycloak.localhost:8080/realms/forge/protocol/openid-connect/token \
 		-d grant_type=password -d client_id=forge-web -d client_secret=forge-web-local-secret \
 		-d username=dev -d password=dev -d scope=openid | jq -r .access_token

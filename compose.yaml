@@ -33,9 +33,14 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-      KC_HOSTNAME: http://localhost:8080
-      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      # *.localhost resolves to 127.0.0.1 in browsers, and to this container
+      # inside the network, so every client sees the same issuer
+      KC_HOSTNAME: http://keycloak.localhost:8080
       KC_HEALTH_ENABLED: "true"
+    networks:
+      default:
+        aliases:
+          - keycloak.localhost
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
@@ -60,8 +65,7 @@ services:
     command: ["api"]
     environment:
       <<: *backend-env
-      OIDC_ISSUER: http://localhost:8080/realms/forge
-      OIDC_DISCOVERY_URL: http://keycloak:8080/realms/forge
+      OIDC_ISSUER: http://keycloak.localhost:8080/realms/forge
       OIDC_AUDIENCE: forge-api
     ports:
       - "127.0.0.1:8000:8000"
