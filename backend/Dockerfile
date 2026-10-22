@@ -15,6 +15,7 @@ RUN mkdir -p $TF_PLUGIN_CACHE_DIR \
        done
 
 FROM gcr.io/distroless/static-debian13:nonroot AS api
+USER nonroot:nonroot
 COPY --from=build /out/forge /usr/local/bin/forge
 ENTRYPOINT ["forge"]
 
