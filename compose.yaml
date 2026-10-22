@@ -103,6 +103,22 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
+  frontend:
+    image: forge-frontend:local
+    build: ./frontend
+    environment:
+      AUTH_URL: http://localhost:3000
+      AUTH_SECRET: ${AUTH_SECRET:-local-dev-only-secret-change-me-in-any-real-env}
+      AUTH_KEYCLOAK_ID: forge-web
+      AUTH_KEYCLOAK_SECRET: forge-web-local-secret
+      AUTH_KEYCLOAK_ISSUER: http://keycloak.localhost:8080/realms/forge
+      FORGE_API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
   riverui:
     image: ghcr.io/riverqueue/riverui:latest
     environment:

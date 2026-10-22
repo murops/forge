@@ -1,0 +1,7 @@
+node_modules
+.next
+.env*
+Dockerfile
+*.test.ts
+README.md
+AGENTS.md
