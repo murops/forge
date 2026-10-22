@@ -161,6 +161,13 @@ func newProvisioner(cfg config.Config, log *slog.Logger) (worker.Provisioner, er
 	if err != nil {
 		return nil, fmt.Errorf("terraform binary: %w", err)
 	}
+	var sonar *worker.SonarCloud
+	if cfg.SonarToken != "" && cfg.SonarOrganization != "" {
+		sonar = worker.NewSonarCloud(cfg.SonarToken, cfg.SonarOrganization)
+	} else {
+		log.Warn("SonarCloud not configured, projects will not be created")
+	}
+
 	return &worker.Terraform{
 		ExecPath:        bin,
 		InfraDir:        cfg.TerraformDir,
@@ -168,6 +175,7 @@ func newProvisioner(cfg config.Config, log *slog.Logger) (worker.Provisioner, er
 		Owner:           cfg.GitHubOrg,
 		App:             app,
 		PrivateRulesets: cfg.GitHubPrivateRulesets,
+		Sonar:           sonar,
 		AWS: worker.AWSOptions{
 			Enabled:             cfg.AWSEnabled,
 			Region:              cfg.AWSRegion,

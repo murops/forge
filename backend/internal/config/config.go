@@ -30,6 +30,8 @@ type Config struct {
 	AWSRegion                 string
 	AWSGitHubOIDCProviderARN  string
 	LambdaPlaceholderImageURI string
+	SonarToken                string
+	SonarOrganization         string
 }
 
 func Load() (Config, error) {
@@ -52,6 +54,8 @@ func Load() (Config, error) {
 		AWSRegion:                 env("AWS_REGION", "us-east-1"),
 		AWSGitHubOIDCProviderARN:  os.Getenv("AWS_GITHUB_OIDC_PROVIDER_ARN"),
 		LambdaPlaceholderImageURI: os.Getenv("LAMBDA_PLACEHOLDER_IMAGE_URI"),
+		SonarToken:                os.Getenv("SONAR_TOKEN"),
+		SonarOrganization:         os.Getenv("SONAR_ORGANIZATION"),
 	}
 	if c.Provisioner != "dryrun" && c.Provisioner != "terraform" {
 		return c, fmt.Errorf("PROVISIONER must be dryrun or terraform")

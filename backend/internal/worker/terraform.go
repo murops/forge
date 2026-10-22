@@ -41,6 +41,7 @@ type Terraform struct {
 	App             GitHubApp
 	AWS             AWSOptions
 	PrivateRulesets bool
+	Sonar           *SonarCloud
 	Log             *slog.Logger
 }
 
@@ -55,6 +56,15 @@ func (t *Terraform) Provision(ctx context.Context, req requests.Request, tmpl re
 		return "", fmt.Errorf("copy infra: %w", err)
 	}
 	log := t.Log.With("request_id", req.ID, "workspace", req.Name)
+
+	// before the repository exists, its first push already runs the sonar job
+	if t.Sonar != nil {
+		if req.Private {
+			log.Warn("skipping SonarCloud, free plan only analyzes public projects")
+		} else if err := t.Sonar.EnsureProject(ctx, t.Owner+"_"+req.Name, req.Name); err != nil {
+			return "", fmt.Errorf("sonarcloud: %w", err)
+		}
+	}
 
 	actionsVars := map[string]string{}
 	if req.WithLambda {
