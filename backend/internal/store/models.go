@@ -79,4 +79,5 @@ type Template struct {
 	SourceRepo     string
 	SupportsLambda bool
 	CreatedAt      time.Time
+	RequiredChecks []string
 }

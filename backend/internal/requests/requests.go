@@ -19,11 +19,12 @@ const (
 )
 
 type Template struct {
-	Slug           string `json:"slug"`
-	Name           string `json:"name"`
-	Description    string `json:"description"`
-	SourceRepo     string `json:"source_repo"`
-	SupportsLambda bool   `json:"supports_lambda"`
+	Slug           string   `json:"slug"`
+	Name           string   `json:"name"`
+	Description    string   `json:"description"`
+	SourceRepo     string   `json:"source_repo"`
+	SupportsLambda bool     `json:"supports_lambda"`
+	RequiredChecks []string `json:"required_checks"`
 }
 
 type Request struct {

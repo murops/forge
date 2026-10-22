@@ -10,7 +10,7 @@ import (
 )
 
 const getTemplate = `-- name: GetTemplate :one
-select slug, name, description, source_repo, supports_lambda, created_at from templates
+select slug, name, description, source_repo, supports_lambda, created_at, required_checks from templates
 where slug = $1
 `
 
@@ -24,12 +24,13 @@ func (q *Queries) GetTemplate(ctx context.Context, slug string) (Template, error
 		&i.SourceRepo,
 		&i.SupportsLambda,
 		&i.CreatedAt,
+		&i.RequiredChecks,
 	)
 	return i, err
 }
 
 const listTemplates = `-- name: ListTemplates :many
-select slug, name, description, source_repo, supports_lambda, created_at from templates
+select slug, name, description, source_repo, supports_lambda, created_at, required_checks from templates
 order by name
 `
 
@@ -49,6 +50,7 @@ func (q *Queries) ListTemplates(ctx context.Context) ([]Template, error) {
 			&i.SourceRepo,
 			&i.SupportsLambda,
 			&i.CreatedAt,
+			&i.RequiredChecks,
 		); err != nil {
 			return nil, err
 		}

@@ -99,6 +99,7 @@ func toTemplate(t store.Template) Template {
 		Description:    t.Description,
 		SourceRepo:     t.SourceRepo,
 		SupportsLambda: t.SupportsLambda,
+		RequiredChecks: t.RequiredChecks,
 	}
 }
 
