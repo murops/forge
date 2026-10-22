@@ -9,10 +9,11 @@ down:
 	docker compose down
 
 logs:
-	docker compose logs -f api worker
+	docker compose logs -f api worker frontend
 
 test:
 	cd backend && go test -race ./...
+	cd frontend && npm test
 
 tf-test:
 	@for dir in infra/modules/* infra/stacks/*; do \
@@ -23,6 +24,7 @@ tf-test:
 lint:
 	cd backend && go vet ./...
 	terraform fmt -check -recursive infra
+	cd frontend && npm run lint && npm run typecheck
 
 generate:
 	docker run --rm -u $$(id -u):$$(id -g) -v $(CURDIR)/backend:/src -w /src sqlc/sqlc:$(SQLC_VERSION) generate
