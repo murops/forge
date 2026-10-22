@@ -1,0 +1,5 @@
+misconfigurations:
+  - id: GIT-0001
+    paths:
+      - infra/modules/github-repository/main.tf
+    statement: visibility is an input, demo repositories are public because the free plan only enforces rulesets on public ones
