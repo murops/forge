@@ -23,12 +23,16 @@ import (
 	"github.com/murops/forge/backend/internal/worker"
 )
 
-const usage = "usage: forge <api|worker|migrate>"
+const usage = "usage: forge <api|worker|migrate|sonar-bind>"
 
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(2)
+	}
+	// a one-off maintenance command: it needs SonarCloud, not the database
+	if os.Args[1] == "sonar-bind" {
+		os.Exit(runSonarBind(os.Args[2:]))
 	}
 
 	cfg, err := config.Load()
