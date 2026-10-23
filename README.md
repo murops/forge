@@ -73,6 +73,16 @@ By default the worker runs with `PROVISIONER=dryrun`, which only logs what it wo
 2. Fill `PROVISIONER=terraform`, `GITHUB_ORG`, `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_PATH` and `FORGE_UID` in `.env`.
 3. Optionally fill `SONAR_TOKEN` and `SONAR_ORGANIZATION`, and create the same `SONAR_TOKEN` secret and `SONAR_ORGANIZATION` variable at the organization level for the templates' CI.
 
+## Kubernetes
+
+The Helm chart in [charts/forge](charts/forge) deploys the API, the worker and the frontend, and runs the migrations as a pre-install/pre-upgrade hook (a PreSync hook in Argo CD). Images and the chart are published to GHCR from `main`:
+
+```bash
+helm install forge oci://ghcr.io/murops/charts/forge -n forge --create-namespace -f my-values.yaml
+```
+
+The chart never holds credentials. The database URL, the frontend auth secrets and the GitHub App key come from existing Secrets, so they can be managed by Sealed Secrets or External Secrets. Pods run as non-root with a read-only root filesystem and no service account token, and the frontend is exposed through a Gateway API `HTTPRoute`.
+
 ## Project layout
 
 ```
@@ -81,15 +91,18 @@ frontend/           Next.js app
 infra/modules/      github-repository and aws-lambda Terraform modules, with tests
 infra/stacks/       root modules the worker applies, one workspace per repository
 deploy/             Keycloak realm and Terraform CLI config used by the worker image
+charts/forge/       Helm chart, with unit tests and the kind e2e test in ci/
 compose.yaml        local stack
 ```
 
 ## Tests and CI
 
 ```bash
-make test      # Go and frontend unit tests
-make tf-test   # terraform test for every module and stack
-make lint      # go vet, terraform fmt, ESLint and TypeScript
+make test        # Go and frontend unit tests
+make tf-test     # terraform test for every module and stack
+make lint        # go vet, terraform fmt, ESLint and TypeScript
+make chart-test  # helm lint and helm-unittest
+make chart-e2e   # installs the chart on kind and creates a repository in dryrun
 ```
 
-The CI runs the same checks, verifies the sqlc generated code is up to date, lints the workflows and builds the three images. Trivy fails the build on fixable HIGH or CRITICAL findings in the Dockerfiles, the Terraform code and the images. The Terraform binary and providers inside the worker image are upstream binaries, so they are reported in the Security tab without failing the build, and Dependabot keeps their versions up to date.
+The CI runs the same checks, verifies the sqlc generated code is up to date, lints the workflows and builds the three images. The chart is validated with kubeconform and installed on a kind cluster, where the e2e test signs in against Keycloak and waits for the worker to finish a request. Images and the chart are only published after all of that passes. Trivy fails the build on fixable HIGH or CRITICAL findings in the Dockerfiles, the Terraform code and the images. The Terraform binary and providers inside the worker image are upstream binaries, so they are reported in the Security tab without failing the build, and Dependabot keeps their versions up to date.
