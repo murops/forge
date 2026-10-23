@@ -38,7 +38,7 @@ token:
 
 chart-test:
 	helm lint charts/forge -f charts/forge/ci/test-values.yaml
-	docker run --rm -v $(CURDIR)/charts:/apps -w /apps $(HELM_UNITTEST_IMAGE) forge
+	docker run --rm -u $$(id -u):$$(id -g) -v $(CURDIR)/charts:/apps -w /apps $(HELM_UNITTEST_IMAGE) forge
 
 # needs kind, kubectl and helm, the cluster is kept for the next run
 chart-e2e:

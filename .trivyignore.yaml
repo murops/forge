@@ -3,3 +3,7 @@ misconfigurations:
     paths:
       - infra/modules/github-repository/main.tf
     statement: visibility is an input, demo repositories are public because the free plan only enforces rulesets on public ones
+  - id: KSV-0014
+    paths:
+      - charts/forge/ci/deps.yaml
+    statement: Keycloak in start-dev rebuilds its jars on startup, it is a throwaway dependency of the chart e2e test

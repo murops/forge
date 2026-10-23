@@ -40,6 +40,13 @@ spec:
       labels:
         app: postgres
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           image: postgres:18-alpine
@@ -56,6 +63,25 @@ spec:
             exec:
               command: ["pg_isready", "-U", "forge", "-d", "forge"]
             periodSeconds: 2
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+            - name: run
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -82,6 +108,13 @@ spec:
       labels:
         app: keycloak
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 0
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: keycloak
           image: quay.io/keycloak/keycloak:26.6
@@ -107,11 +140,25 @@ spec:
               port: management
             periodSeconds: 5
             failureThreshold: 60
+          securityContext:
+            allowPrivilegeEscalation: false
+            # start-dev rebuilds the server jars on startup
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
+            - name: data
+              mountPath: /opt/keycloak/data
             - name: realm
               mountPath: /opt/keycloak/data/import
               readOnly: true
+            - name: tmp
+              mountPath: /tmp
       volumes:
+        - name: data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
         - name: realm
           configMap:
             name: forge-realm

@@ -97,7 +97,7 @@ jobs:
           docker build -f backend/Dockerfile --target worker -t forge-worker:ci .
           docker build -t forge-frontend:ci frontend
       - name: Scan Dockerfiles and Terraform
-        run: docker run --rm -v "$PWD:/src" "$TRIVY_IMAGE" config --ignorefile /src/.trivyignore.yaml --exit-code 1 --severity HIGH,CRITICAL /src
+        run: docker run --rm -v "$PWD:/src" "$TRIVY_IMAGE" config --ignorefile /src/.trivyignore.yaml --helm-values /src/charts/forge/ci/test-values.yaml --exit-code 1 --severity HIGH,CRITICAL /src
       - name: Scan images
         run: |
           trivy() { docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/src" "$TRIVY_IMAGE" image "$@"; }
@@ -137,7 +137,7 @@ jobs:
         with:
           version: ${{ env.HELM_VERSION }}
       - run: helm lint charts/forge -f charts/forge/ci/test-values.yaml
-      - run: docker run --rm -v "$PWD/charts:/apps" -w /apps "$HELM_UNITTEST_IMAGE" forge
+      - run: docker run --rm -u "$(id -u):$(id -g)" -v "$PWD/charts:/apps" -w /apps "$HELM_UNITTEST_IMAGE" forge
       - name: Validate manifests
         run: |
           helm template forge charts/forge -f charts/forge/ci/test-values.yaml \
