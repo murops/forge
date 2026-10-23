@@ -14,6 +14,13 @@ updates:
     groups:
       npm:
         update-types: [minor, patch]
+    ignore:
+      # types follow the Node LTS used at runtime
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
+      # typescript-eslint does not support TypeScript 7 yet
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
   - package-ecosystem: terraform
     directories: [/infra/stacks/repository, /infra/stacks/lambda]
     schedule:
@@ -22,6 +29,10 @@ updates:
     directories: [/backend, /frontend]
     schedule:
       interval: weekly
+    ignore:
+      # stay on the Node LTS line, moving to the next one is a manual change
+      - dependency-name: node
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:
