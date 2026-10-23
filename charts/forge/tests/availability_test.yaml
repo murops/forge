@@ -1,0 +1,32 @@
+suite: availability
+templates:
+  - templates/availability.yaml
+values:
+  - values.yaml
+tests:
+  - it: creates a PDB for each component with more than one replica
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: PodDisruptionBudget
+
+  - it: skips the PDB on a single replica
+    set:
+      api.replicas: 1
+      frontend.replicas: 1
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: creates the HPA and keeps the PDB when autoscaling
+    set:
+      api.replicas: 1
+      api.autoscaling.enabled: true
+      frontend.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: HorizontalPodAutoscaler
+        documentIndex: 1

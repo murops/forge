@@ -1,0 +1,7 @@
+database:
+  existingSecret: forge-db
+oidc:
+  issuer: http://keycloak.test/realms/forge
+frontend:
+  auth:
+    existingSecret: forge-frontend

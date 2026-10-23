@@ -1,0 +1,12 @@
+apiVersion: v2
+name: forge
+description: Self-service platform that creates GitHub repositories from templates
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/murops/forge
+sources:
+  - https://github.com/murops/forge
+maintainers:
+  - name: murops
+    url: https://github.com/murops

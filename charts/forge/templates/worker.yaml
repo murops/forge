@@ -1,0 +1,109 @@
+{{- $w := .Values.worker }}
+{{- $terraform := eq $w.provisioner "terraform" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "forge.fullname" . }}-worker
+  labels:
+    {{- include "forge.componentLabels" (list . "worker") | nindent 4 }}
+spec:
+  replicas: {{ $w.replicas }}
+  selector:
+    matchLabels:
+      {{- include "forge.selectorLabels" (list . "worker") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "forge.selectorLabels" (list . "worker") | nindent 8 }}
+      {{- with $w.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "forge.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ $w.terminationGracePeriodSeconds }}
+      securityContext:
+        {{- include "forge.backendPodSecurityContext" . | nindent 8 }}
+      containers:
+        - name: worker
+          image: {{ include "forge.image" (list . $w.image) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["worker"]
+          env:
+            {{- include "forge.databaseEnv" . | nindent 12 }}
+            - name: WORKER_CONCURRENCY
+              value: {{ $w.concurrency | quote }}
+            - name: PROVISIONER
+              value: {{ $w.provisioner | quote }}
+            - name: GITHUB_ORG
+              value: {{ $w.github.org | quote }}
+            {{- if $terraform }}
+            - name: GITHUB_APP_ID
+              value: {{ required "worker.github.appId is required with the terraform provisioner" $w.github.appId | quote }}
+            - name: GITHUB_APP_INSTALLATION_ID
+              value: {{ required "worker.github.installationId is required with the terraform provisioner" $w.github.installationId | quote }}
+            - name: GITHUB_APP_PRIVATE_KEY_FILE
+              value: /var/run/secrets/forge/github/{{ $w.github.key }}
+            - name: GITHUB_PRIVATE_RULESETS
+              value: {{ $w.github.privateRulesets | quote }}
+            {{- end }}
+            {{- if $w.sonar.existingSecret }}
+            - name: SONAR_ORGANIZATION
+              value: {{ required "worker.sonar.organization is required with worker.sonar.existingSecret" $w.sonar.organization | quote }}
+            - name: SONAR_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $w.sonar.existingSecret }}
+                  key: {{ $w.sonar.key }}
+            {{- end }}
+            {{- if $w.aws.enabled }}
+            - name: AWS_ENABLED
+              value: "true"
+            - name: AWS_REGION
+              value: {{ $w.aws.region | quote }}
+            - name: AWS_GITHUB_OIDC_PROVIDER_ARN
+              value: {{ $w.aws.githubOIDCProviderARN | quote }}
+            - name: LAMBDA_PLACEHOLDER_IMAGE_URI
+              value: {{ $w.aws.lambdaPlaceholderImageURI | quote }}
+            {{- end }}
+            # terraform runs in a temp dir, the root filesystem is read-only
+            - name: HOME
+              value: /tmp
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml $w.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- if $terraform }}
+            - name: github-app
+              mountPath: /var/run/secrets/forge/github
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        {{- if $terraform }}
+        - name: github-app
+          secret:
+            secretName: {{ required "worker.github.existingSecret is required with the terraform provisioner" $w.github.existingSecret }}
+            defaultMode: 0440
+        {{- end }}
+      {{- with $w.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $w.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $w.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

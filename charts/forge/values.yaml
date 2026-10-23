@@ -1,0 +1,148 @@
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  registry: ghcr.io/murops
+  # defaults to the chart appVersion
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+logLevel: info
+
+# Secret with the Postgres connection string, e.g. the <cluster>-app secret created by CloudNativePG
+database:
+  existingSecret: ""
+  key: uri
+
+oidc:
+  issuer: ""
+  audience: forge-api
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+api:
+  image:
+    repository: forge-api
+  replicas: 2
+  port: 8000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilization: 75
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+worker:
+  image:
+    repository: forge-worker
+  replicas: 1
+  concurrency: 5
+  # dryrun only logs, terraform creates real repositories
+  provisioner: dryrun
+  github:
+    org: murops-forge
+    appId: ""
+    installationId: ""
+    privateRulesets: false
+    # Secret with the GitHub App private key, required when provisioner is terraform
+    existingSecret: ""
+    key: private-key.pem
+  sonar:
+    organization: ""
+    existingSecret: ""
+    key: token
+  aws:
+    enabled: false
+    region: us-east-1
+    githubOIDCProviderARN: ""
+    lambdaPlaceholderImageURI: ""
+  # longer than the 30s the worker waits for running jobs on shutdown
+  terminationGracePeriodSeconds: 60
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 1Gi
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+migrate:
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+frontend:
+  enabled: true
+  image:
+    repository: forge-frontend
+  replicas: 2
+  port: 3000
+  # public URL of the frontend, used for the OIDC redirects
+  url: http://forge.localhost
+  auth:
+    clientId: forge-web
+    # Secret with AUTH_SECRET and AUTH_KEYCLOAK_SECRET
+    existingSecret: ""
+  # issuer seen by the frontend, defaults to oidc.issuer
+  issuer: ""
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilization: 75
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Gateway API route for the frontend, the API is only reached from inside the cluster
+httpRoute:
+  enabled: false
+  parentRefs: []
+  hostnames: []
+  annotations: {}

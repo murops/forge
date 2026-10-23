@@ -1,0 +1,8 @@
+Forge {{ .Chart.AppVersion }} installed in {{ .Release.Namespace }}, provisioner: {{ .Values.worker.provisioner }}.
+{{- if and .Values.httpRoute.enabled .Values.frontend.enabled }}
+
+Open {{ .Values.frontend.url }}
+{{- else if .Values.frontend.enabled }}
+
+kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "forge.fullname" . }}-frontend 3000:80
+{{- end }}

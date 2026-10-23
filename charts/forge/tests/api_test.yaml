@@ -1,0 +1,58 @@
+suite: api
+templates:
+  - templates/api.yaml
+values:
+  - values.yaml
+tests:
+  - it: uses the chart appVersion when no tag is set
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/murops/forge-api:0.1.0
+
+  - it: uses image.tag when set
+    documentIndex: 0
+    set:
+      image.tag: sha-abc1234
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/murops/forge-api:sha-abc1234
+
+  - it: reads the database URL from the secret
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: forge-db
+                key: uri
+
+  - it: runs as the distroless nonroot uid with a read-only root filesystem
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 65532
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: leaves replicas to the HPA when autoscaling is on
+    documentIndex: 0
+    set:
+      api.autoscaling.enabled: true
+    asserts:
+      - notExists:
+          path: spec.replicas
+
+  - it: fails without an OIDC issuer
+    set:
+      oidc.issuer: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: oidc.issuer is required

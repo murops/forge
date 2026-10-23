@@ -1,0 +1,43 @@
+{{- range $name := list "api" "frontend" }}
+{{- $c := index $.Values $name }}
+{{- if or (eq $name "api") $.Values.frontend.enabled }}
+{{- /* a PDB on a single replica would block node drains */}}
+{{- if and $c.podDisruptionBudget.enabled (or $c.autoscaling.enabled (gt (int $c.replicas) 1)) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "forge.fullname" $ }}-{{ $name }}
+  labels:
+    {{- include "forge.componentLabels" (list $ $name) | nindent 4 }}
+spec:
+  minAvailable: {{ $c.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "forge.selectorLabels" (list $ $name) | nindent 6 }}
+{{- end }}
+{{- if $c.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "forge.fullname" $ }}-{{ $name }}
+  labels:
+    {{- include "forge.componentLabels" (list $ $name) | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "forge.fullname" $ }}-{{ $name }}
+  minReplicas: {{ $c.autoscaling.minReplicas }}
+  maxReplicas: {{ $c.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $c.autoscaling.targetCPUUtilization }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,66 @@
+suite: worker
+templates:
+  - templates/worker.yaml
+values:
+  - values.yaml
+tests:
+  - it: does not need GitHub credentials in dryrun
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GITHUB_APP_ID
+            value: ""
+          any: true
+      - lengthEqual:
+          path: spec.template.spec.volumes
+          count: 1
+
+  - it: requires the GitHub App secret with the terraform provisioner
+    set:
+      worker.provisioner: terraform
+      worker.github.appId: "123"
+      worker.github.installationId: "456"
+    asserts:
+      - failedTemplate:
+          errorMessage: worker.github.existingSecret is required with the terraform provisioner
+
+  - it: mounts the GitHub App key with the terraform provisioner
+    set:
+      worker.provisioner: terraform
+      worker.github.appId: "123"
+      worker.github.installationId: "456"
+      worker.github.existingSecret: forge-github-app
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GITHUB_APP_PRIVATE_KEY_FILE
+            value: /var/run/secrets/forge/github/private-key.pem
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: github-app
+            secret:
+              secretName: forge-github-app
+              defaultMode: 0440
+
+  - it: only sets SonarCloud when a token secret is given
+    set:
+      worker.sonar.existingSecret: sonar
+      worker.sonar.organization: murops
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SONAR_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: sonar
+                key: token
+
+  - it: rejects an unknown provisioner
+    set:
+      worker.provisioner: ansible
+    asserts:
+      - failedTemplate: {}

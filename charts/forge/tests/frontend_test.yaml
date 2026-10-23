@@ -1,0 +1,52 @@
+suite: frontend
+templates:
+  - templates/frontend.yaml
+  - templates/httproute.yaml
+values:
+  - values.yaml
+tests:
+  - it: calls the API through the in-cluster service
+    template: templates/frontend.yaml
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FORGE_API_URL
+            value: http://RELEASE-NAME-forge-api:8000
+
+  - it: defaults the frontend issuer to oidc.issuer
+    template: templates/frontend.yaml
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AUTH_KEYCLOAK_ISSUER
+            value: http://keycloak.test/realms/forge
+
+  - it: renders nothing when disabled
+    set:
+      frontend.enabled: false
+      httpRoute.enabled: true
+      httpRoute.parentRefs:
+        - name: eg
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: routes the hostnames to the frontend service
+    template: templates/httproute.yaml
+    set:
+      httpRoute.enabled: true
+      httpRoute.parentRefs:
+        - name: eg
+          namespace: envoy-gateway-system
+      httpRoute.hostnames: [forge.localhost]
+    asserts:
+      - equal:
+          path: spec.hostnames
+          value: [forge.localhost]
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: RELEASE-NAME-forge-frontend
