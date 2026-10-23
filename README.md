@@ -73,6 +73,18 @@ By default the worker runs with `PROVISIONER=dryrun`, which only logs what it wo
 2. Fill `PROVISIONER=terraform`, `GITHUB_ORG`, `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_PATH` and `FORGE_UID` in `.env`.
 3. Optionally fill `SONAR_TOKEN` and `SONAR_ORGANIZATION`, and create the same `SONAR_TOKEN` secret and `SONAR_ORGANIZATION` variable at the organization level for the templates' CI.
 
+### Binding SonarCloud projects of existing repositories
+
+Repositories created before Forge bound their SonarCloud projects can be bound in one go. It is a dry run unless `-apply` is given, and it never deletes anything:
+
+```bash
+cd backend
+SONAR_TOKEN=... SONAR_ORGANIZATION=murops-forge go run ./cmd/forge sonar-bind          # show what would happen
+SONAR_TOKEN=... SONAR_ORGANIZATION=murops-forge go run ./cmd/forge sonar-bind -apply   # bind
+```
+
+A `<key>2` project next to `<key>` is a duplicate created by importing the repository from SonarCloud's UI. SonarCloud refuses a second binding to the same repository, so delete the duplicate in SonarCloud (Administration → Deletion) before running with `-apply`. The token must belong to an organization admin.
+
 ## Kubernetes
 
 The Helm chart in [charts/forge](charts/forge) deploys the API, the worker and the frontend, and runs the migrations as a pre-install/pre-upgrade hook (a PreSync hook in Argo CD). Images and the chart are published to GHCR from `main`:
