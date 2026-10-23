@@ -58,10 +58,13 @@ func (t *Terraform) Provision(ctx context.Context, req requests.Request, tmpl re
 	log := t.Log.With("request_id", req.ID, "workspace", req.Name)
 
 	// before the repository exists, its first push already runs the sonar job
-	if t.Sonar != nil {
-		if req.Private {
-			log.Warn("skipping SonarCloud, free plan only analyzes public projects")
-		} else if err := t.Sonar.EnsureProject(ctx, t.Owner+"_"+req.Name, req.Name); err != nil {
+	sonar := t.Sonar != nil && !req.Private
+	sonarKey := t.Owner + "_" + req.Name
+	if t.Sonar != nil && req.Private {
+		log.Warn("skipping SonarCloud, free plan only analyzes public projects")
+	}
+	if sonar {
+		if err := t.Sonar.EnsureProject(ctx, sonarKey, req.Name); err != nil {
 			return "", fmt.Errorf("sonarcloud: %w", err)
 		}
 	}
@@ -92,6 +95,13 @@ func (t *Terraform) Provision(ctx context.Context, req requests.Request, tmpl re
 	var url string
 	if err := json.Unmarshal(out["repository_url"].Value, &url); err != nil {
 		return "", fmt.Errorf("read repository_url output: %w", err)
+	}
+
+	// the repository exists now; the CI analysis works without the binding, so a failure only warns
+	if sonar {
+		if err := t.Sonar.BindRepository(ctx, sonarKey, t.Owner+"/"+req.Name); err != nil {
+			log.Warn("could not bind the SonarCloud project to the repository", "error", err)
+		}
 	}
 	return url, nil
 }
