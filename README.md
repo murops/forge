@@ -17,7 +17,7 @@ It is a public, from-scratch version of an internal developer platform I built a
 - Code from one of the templates: [Go API](https://github.com/murops-forge/template-api-go), [FastAPI](https://github.com/murops-forge/template-api-python) or [Python Lambda](https://github.com/murops-forge/template-lambda-python)
 - `main`, `homol` and `desen` branches with rulesets: `main` and `homol` only change through pull requests that pass the `test`, `trivy` and `sonar` checks, `desen` can't be deleted or force pushed
 - CI with tests, Trivy on the Dockerfile and the image (results in the Security tab) and a SonarCloud quality gate on pull requests
-- A SonarCloud project, created before the repository so the first push is already analyzed
+- A SonarCloud project, created before the repository so the first push is already analyzed, and bound to the repository once it exists, so importing the repository from SonarCloud's UI reuses it instead of creating a duplicate with automatic analysis
 - Dependabot opening updates against `desen`
 - Optionally an ECR repository, a Lambda function running a placeholder image and an IAM role the repository assumes through GitHub OIDC to deploy, with no AWS keys stored anywhere
 
@@ -40,7 +40,7 @@ flowchart LR
 
 1. The frontend signs the user in against Keycloak. The tokens stay in the encrypted session cookie and only the Next.js server uses them to call the API.
 2. The API validates the token, stores the request and enqueues the job in the same Postgres transaction, so there is never a request without a job or the other way around.
-3. The worker picks the job, creates the SonarCloud project and runs `terraform apply` in a workspace named after the repository, with the state in the same Postgres. Failures are retried with backoff and the request is marked as failed after the last attempt.
+3. The worker picks the job, creates the SonarCloud project and runs `terraform apply` in a workspace named after the repository, with the state in the same Postgres. Then it binds the SonarCloud project to the new repository; a failed binding only logs a warning, since the CI analysis works without it. Failures are retried with backoff and the request is marked as failed after the last attempt.
 4. The frontend polls the request until it is ready and links to the new repository.
 
 ## Design decisions
