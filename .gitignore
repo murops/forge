@@ -6,3 +6,4 @@ node_modules/
 .next/
 infra/modules/**/.terraform.lock.hcl
 *.pem
+charts/forge/tests/__snapshot__/
