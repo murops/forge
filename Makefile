@@ -1,6 +1,7 @@
-.PHONY: up down logs test tf-test lint generate token
+.PHONY: up down logs test tf-test lint generate token chart-test chart-e2e
 
 SQLC_VERSION := 1.31.1
+HELM_UNITTEST_IMAGE := helmunittest/helm-unittest:4.3.0-1.2.1
 
 up:
 	docker compose up -d --build
@@ -34,3 +35,11 @@ token:
 	@curl -s http://keycloak.localhost:8080/realms/forge/protocol/openid-connect/token \
 		-d grant_type=password -d client_id=forge-web -d client_secret=forge-web-local-secret \
 		-d username=dev -d password=dev -d scope=openid | jq -r .access_token
+
+chart-test:
+	helm lint charts/forge -f charts/forge/ci/test-values.yaml
+	docker run --rm -v $(CURDIR)/charts:/apps -w /apps $(HELM_UNITTEST_IMAGE) forge
+
+# needs kind, kubectl and helm, the cluster is kept for the next run
+chart-e2e:
+	charts/forge/ci/e2e.sh

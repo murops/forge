@@ -1,0 +1,11 @@
+database:
+  existingSecret: forge-db
+oidc:
+  issuer: http://keycloak.keycloak.svc:8080/realms/forge
+api:
+  replicas: 1
+frontend:
+  replicas: 1
+  url: http://localhost:3000
+  auth:
+    existingSecret: forge-frontend
