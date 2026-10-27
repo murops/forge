@@ -95,6 +95,8 @@ helm install forge oci://ghcr.io/murops/charts/forge -n forge --create-namespace
 
 The chart never holds credentials. The database URL, the frontend auth secrets and the GitHub App key come from existing Secrets, so they can be managed by Sealed Secrets or External Secrets. Pods run as non-root with a read-only root filesystem and no service account token, and the frontend is exposed through a Gateway API `HTTPRoute`.
 
+[forge-gitops](https://github.com/murops/forge-gitops) runs this chart with Argo CD on a local kind cluster, next to Keycloak, CloudNativePG and External Secrets, with `desen`, `homol` and `main` environments promoted by pull request.
+
 ## Project layout
 
 ```
