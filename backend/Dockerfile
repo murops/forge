@@ -6,7 +6,7 @@ RUN go mod download
 COPY backend/ .
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/forge ./cmd/forge
 
-FROM hashicorp/terraform:1.16.6 AS terraform
+FROM hashicorp/terraform:1.17.0 AS terraform
 ENV TF_PLUGIN_CACHE_DIR=/opt/forge/terraform/plugins
 COPY infra /opt/forge/infra
 RUN mkdir -p $TF_PLUGIN_CACHE_DIR \
